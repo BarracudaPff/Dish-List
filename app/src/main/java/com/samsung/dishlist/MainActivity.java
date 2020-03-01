@@ -13,6 +13,8 @@ import com.google.gson.Gson;
 import com.samsung.dishlist.models.Dish;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 
@@ -49,21 +51,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public class LoadConfigAsyncTask extends AsyncTask<InputStream, Void, Dish[]> {
+    public class LoadConfigAsyncTask extends AsyncTask<InputStream, Void, HashMap<String, ArrayList<Dish>>> {
         @Override
         protected void onPreExecute() {
             progressBar.setVisibility(View.VISIBLE);
         }
 
         @Override
-        protected Dish[] doInBackground(InputStream... streams) {
+        protected HashMap<String, ArrayList<Dish>> doInBackground(InputStream... streams) {
             String json = getJsonContent(streams[0]);
 
-            return new Gson().fromJson(json, Dish[].class);
+            return loadMap(new Gson().fromJson(json, Dish[].class));
         }
 
         @Override
-        protected void onPostExecute(Dish[] dishes) {
+        protected void onPostExecute(HashMap<String, ArrayList<Dish>> dishes) {
             progressBar.setVisibility(View.GONE);
         }
 
@@ -74,6 +76,24 @@ public class MainActivity extends AppCompatActivity {
                 builder.append(scanner.next());
             }
             return builder.toString();
+        }
+
+        private HashMap<String, ArrayList<Dish>> loadMap(Dish[] dishes) {
+            HashMap<String, ArrayList<Dish>> map = new HashMap<>();
+
+            for (Dish dish : dishes) {
+                for (String ingredient : dish.ingredients) {
+                    if (map.containsKey(ingredient)) {
+                        map.get(ingredient).add(dish);
+                    } else {
+                        ArrayList<Dish> list = new ArrayList<>();
+                        list.add(dish);
+                        map.put(ingredient, list);
+                    }
+                }
+            }
+
+            return map;
         }
     }
 }
